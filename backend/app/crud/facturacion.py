@@ -27,7 +27,7 @@ def _generar_numero_boleta(db: Session) -> Tuple[str, int, str]:
     return serie, siguiente, numero_boleta
 
 
-def _asegurar_boleta_completa(db: Session, boleta: Boleta, monto_total: Decimal) -> None:
+def _asegurar_boleta_completa(db: Session, boleta: Boleta, subtotal: Decimal, igv: Decimal, monto_total: Decimal) -> None:
     updated = False
     if not boleta:
         return
@@ -38,6 +38,14 @@ def _asegurar_boleta_completa(db: Session, boleta: Boleta, monto_total: Decimal)
 
     if not boleta.fecha:
         boleta.fecha = date.today()
+        updated = True
+
+    if boleta.subtotal is None or boleta.subtotal == 0:
+        boleta.subtotal = subtotal
+        updated = True
+
+    if boleta.igv is None or boleta.igv == 0:
+        boleta.igv = igv
         updated = True
 
     if boleta.total is None or boleta.total == 0:
@@ -68,12 +76,14 @@ def obtener_estado_cuenta_reserva(db: Session, id_reserva: int):
     precio_noche = reserva.habitacion.precio_noche
     monto_hospedaje = Decimal(dias) * Decimal(precio_noche)
     monto_servicios = _calcular_monto_servicios(consumos)
-    monto_total = monto_hospedaje + monto_servicios
+    subtotal = monto_hospedaje + monto_servicios
+    igv = (subtotal * Decimal('0.18')).quantize(Decimal('0.01'))
+    monto_total = subtotal + igv
 
     # Obtener estado de boleta si existe
     boleta = db.query(Boleta).filter(Boleta.ID_Reserva == id_reserva).first()
     if boleta:
-        _asegurar_boleta_completa(db, boleta, monto_total)
+        _asegurar_boleta_completa(db, boleta, subtotal, igv, monto_total)
     estado_boleta = boleta.estado if boleta else "generada"
 
     numero_cochera = None
@@ -84,6 +94,8 @@ def obtener_estado_cuenta_reserva(db: Session, id_reserva: int):
         "ID_Reserva": id_reserva,
         "monto_hospedaje": float(monto_hospedaje),
         "monto_servicios": float(monto_servicios),
+        "subtotal": float(subtotal),
+        "igv": float(igv),
         "monto_total": float(monto_total),
         "consumos": consumos,
         "estado_reserva": reserva.estado,
@@ -107,7 +119,9 @@ def generar_boleta_final(db: Session, id_reserva: int) -> Boleta:
     precio_noche = reserva.habitacion.precio_noche
     monto_hospedaje = Decimal(dias) * Decimal(precio_noche)
     monto_servicios = _calcular_monto_servicios(consumos)
-    monto_total = monto_hospedaje + monto_servicios
+    subtotal = monto_hospedaje + monto_servicios
+    igv = (subtotal * Decimal('0.18')).quantize(Decimal('0.01'))
+    monto_total = subtotal + igv
 
     boleta_existente = db.query(Boleta).filter(Boleta.ID_Reserva == id_reserva).first()
     if boleta_existente:
@@ -116,6 +130,10 @@ def generar_boleta_final(db: Session, id_reserva: int) -> Boleta:
             boleta_existente.serie, boleta_existente.correlativo, _ = _generar_numero_boleta(db)
         if not boleta_existente.fecha:
             boleta_existente.fecha = date.today()
+        if boleta_existente.subtotal is None or boleta_existente.subtotal == 0:
+            boleta_existente.subtotal = subtotal
+        if boleta_existente.igv is None or boleta_existente.igv == 0:
+            boleta_existente.igv = igv
         if boleta_existente.total is None or boleta_existente.total == 0:
             boleta_existente.total = monto_total
         db.commit()
@@ -127,6 +145,8 @@ def generar_boleta_final(db: Session, id_reserva: int) -> Boleta:
         serie=serie,
         correlativo=correlativo,
         fecha=date.today(),
+        subtotal=subtotal,
+        igv=igv,
         total=monto_total,
         ID_Reserva=id_reserva
     )

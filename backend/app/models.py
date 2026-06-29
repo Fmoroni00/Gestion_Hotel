@@ -333,6 +333,9 @@ class Boleta(Base):
     serie = Column(String(10), nullable=False)
     correlativo = Column(Integer, nullable=False)
     fecha = Column(Date, nullable=False)
+    fecha_emision = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    subtotal = Column(Numeric(10, 2), nullable=True)
+    igv = Column(Numeric(10, 2), nullable=True)
     total = Column(Numeric(10, 2), nullable=False)
     estado = Column(Enum('generada', 'pagada', 'cancelada'), nullable=False, server_default=text("'generada'"))
     # Parking info migrated to asignacion_parking. Keep reference by FK.

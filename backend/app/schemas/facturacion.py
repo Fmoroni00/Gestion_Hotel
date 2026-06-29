@@ -13,6 +13,8 @@ class BoletaResponse(BaseModel):
     fecha_emision: date
     monto_hospedaje: float | Decimal
     monto_servicios: float | Decimal
+    subtotal: float | Decimal
+    igv: float | Decimal
     monto_total: float | Decimal
 
     model_config = ConfigDict(from_attributes=True)

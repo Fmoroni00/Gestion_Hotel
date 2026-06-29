@@ -216,6 +216,9 @@ class BoletaBase(BaseModel):
     serie: str = Field(..., max_length=10)
     correlativo: int
     fecha: date
+    fecha_emision: Optional[datetime] = None
+    subtotal: Optional[Decimal] = None
+    igv: Optional[Decimal] = None
     total: Decimal = Field(..., max_digits=10, decimal_places=2)
     ID_Reserva: int
     ID_Asignacion: Optional[int] = None

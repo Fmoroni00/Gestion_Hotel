@@ -134,9 +134,11 @@ def emitir_boleta_reserva(
             "ID_Boleta": boleta.ID_Boleta,
             "ID_Reserva": boleta.ID_Reserva,
             "numero_boleta": numero_boleta,
-            "fecha_emision": boleta.fecha,
+            "fecha_emision": boleta.fecha_emision or boleta.fecha,
             "monto_hospedaje": estado["monto_hospedaje"],
             "monto_servicios": estado["monto_servicios"],
+            "subtotal": estado["subtotal"],
+            "igv": estado["igv"],
             "monto_total": estado["monto_total"],
         }
     except ValueError as error:
