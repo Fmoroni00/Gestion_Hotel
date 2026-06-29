@@ -111,14 +111,18 @@ def cambiar_estado_reserva(
         if reserva.habitacion:
             reserva.habitacion.estado = "disponible"
 
-        if reserva.asignacion_parking:
-            try:
-                if reserva.asignacion_parking.parking:
-                    reserva.asignacion_parking.parking.estado = "disponible"
-                db.delete(reserva.asignacion_parking)
-            except Exception:
-                # No queremos que falle la transición principal si la liberación de parking falla
-                pass
+        try:
+            from app.models import Asignacion_Parking, Parking
+
+            asignacion = db.query(Asignacion_Parking).filter(Asignacion_Parking.ID_Reserva == id_reserva).first()
+            if asignacion:
+                parking = db.query(Parking).filter(Parking.ID_Parking == asignacion.ID_Parking).first()
+                if parking:
+                    parking.estado = "disponible"
+                db.delete(asignacion)
+        except Exception:
+            # No queremos que falle la transición principal si la liberación de parking falla
+            pass
 
     # Generar boleta automáticamente si la reserva se marca como terminada (check-out)
     try:
