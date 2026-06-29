@@ -12,6 +12,15 @@ from app.models import Nota_Servicio
 router = APIRouter(prefix="/notas-servicio", tags=["Notas de Servicio"])
 
 
+@router.get("/reserva/{id_reserva}", response_model=List[dict])
+def obtener_notas_servicio_por_reserva_endpoint(
+    id_reserva: int,
+    db: Session = Depends(get_db)
+):
+    """Obtiene todas las notas de servicio de una reserva con detalles de servicios."""
+    return obtener_notas_servicio_por_reserva(db, id_reserva)
+
+
 @router.get("/", response_model=List[NotaServicioResponse])
 def listar_notas_servicio_endpoint(db: Session = Depends(get_db)):
     return db.query(Nota_Servicio).order_by(Nota_Servicio.fecha_hora.desc()).all()
@@ -64,12 +73,3 @@ def actualizar_estado_nota_servicio(
         )
     )
     return nota
-
-
-@router.get("/reserva/{id_reserva}", response_model=List[dict])
-def obtener_notas_servicio_por_reserva_endpoint(
-    id_reserva: int,
-    db: Session = Depends(get_db)
-):
-    """Obtiene todas las notas de servicio de una reserva con detalles de servicios."""
-    return obtener_notas_servicio_por_reserva(db, id_reserva)
