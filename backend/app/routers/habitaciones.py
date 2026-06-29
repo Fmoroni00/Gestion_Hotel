@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/habitaciones", tags=["habitaciones"])
 @router.get("/", response_model=List[HabitacionResponse])
 def listar_habitaciones(
     skip: int = 0,
-    limit: int = 10,
+    limit: int = Query(100, ge=1, le=500),
     estado: EstadoHabitacion = None,
     db: Session = Depends(get_db)
 ):

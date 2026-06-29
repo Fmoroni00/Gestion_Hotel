@@ -7,7 +7,7 @@ from typing import List, Optional
 def obtener_habitaciones(
     db: Session,
     skip: int = 0,
-    limit: int = 10,
+    limit: int = 100,
     estado: Optional[str] = None
 ) -> List[Habitacion]:
     """

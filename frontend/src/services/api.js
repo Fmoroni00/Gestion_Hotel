@@ -99,9 +99,9 @@ export async function getEstadiaHuesped() {
   return await _handleResponse(response)
 }
 
-export async function getHabitaciones() {
+export async function getHabitaciones(limit = 100) {
   const token = localStorage.getItem('access_token')
-  const response = await fetch(`${BASE_URL}/api/v1/habitaciones/`, {
+  const response = await fetch(`${BASE_URL}/api/v1/habitaciones/?skip=0&limit=${limit}`, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',

@@ -496,7 +496,7 @@ onMounted(() => {
 
 async function loadRooms() {
   try {
-    const data = await getHabitaciones()
+    const data = await getHabitaciones(100)
     console.log('Datos de habitaciones desde la API:', data)
     rooms.value = Array.isArray(data)
       ? data.map(item => ({
@@ -604,14 +604,30 @@ async function submitCheckIn() {
       const nombre = parts[0] || 'Invitado'
       const apellido = parts.slice(1).join(' ') || 'N/A'
       
-      huesped = await createHuesped({
-        DNI: checkinForm.dni,
-        nombre: nombre,
-        apellido: apellido,
-        correo: checkinForm.correo || null,
-        telefono: checkinForm.telefono,
-        estado: 'activo'
-      })
+      try {
+        huesped = await createHuesped({
+          DNI: checkinForm.dni,
+          nombre: nombre,
+          apellido: apellido,
+          correo: checkinForm.correo || null,
+          telefono: checkinForm.telefono,
+          estado: 'activo'
+        })
+      } catch (err) {
+        const msg = String(err.message || '').toLowerCase()
+        if (checkinForm.correo && msg.includes('correo') && msg.includes('registrado')) {
+          huesped = await createHuesped({
+            DNI: checkinForm.dni,
+            nombre: nombre,
+            apellido: apellido,
+            correo: null,
+            telefono: checkinForm.telefono,
+            estado: 'activo'
+          })
+        } else {
+          throw err
+        }
+      }
     }
 
     // 2. Crear reserva
