@@ -46,10 +46,11 @@ def login_staff(payload: StaffLogin, db: Session = Depends(get_db)):
 def login_huesped(payload: HuespedLogin, db: Session = Depends(get_db)):
     codigo = db.query(models.Codigo_Acceso).filter(models.Codigo_Acceso.valor == payload.valor).first()
 
-    if not codigo or codigo.estado != "activo":
+    # Permitir código expirado para que el huésped pueda ver su boleta después del checkout
+    if not codigo:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Código de acceso inválido o no vigente"
+            detail="Código de acceso inválido"
         )
 
     huesped = codigo.huesped
@@ -59,10 +60,10 @@ def login_huesped(payload: HuespedLogin, db: Session = Depends(get_db)):
             detail="Huésped inactivo o no encontrado"
         )
 
-    # No validamos rangos de reserva aquí. Opcionalmente obtenemos una reserva asociada (cualquiera no cancelada)
+    # Buscar reserva: primero activa, luego finalizada (para permitir ver boleta después del checkout)
     reserva_asociada = db.query(models.Reserva).filter(
         models.Reserva.DNI == huesped.DNI,
-        models.Reserva.estado != "cancelada"
+        models.Reserva.estado.in_(["pendiente", "confirmada", "activa", "finalizada"])
     ).order_by(models.Reserva.fecha_entrada.desc()).first()
 
     token_data = {

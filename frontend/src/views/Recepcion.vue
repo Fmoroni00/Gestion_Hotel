@@ -127,6 +127,28 @@
             </div>
           </div>
 
+          <!-- NOTAS DE SERVICIO PENDIENTES -->
+          <div class="card card--inner" v-if="notasServicioSeleccionadas.length > 0">
+            <h3 class="card-title--small">🎫 Solicitudes de Servicio Pendientes</h3>
+            <div class="notas-servicio-list">
+              <div v-for="nota in notasServicioSeleccionadas" :key="nota.ID_Nota" class="nota-item" :class="`nota-${nota.estado}`">
+                <div class="nota-header">
+                  <span class="nota-servicio">{{ nota.nombre_servicio || `Servicio #${nota.ID_Servicio}` }}</span>
+                  <span class="badge" :class="`badge--${nota.estado}`">{{ nota.estado }}</span>
+                </div>
+                <div class="nota-detalles">
+                  <p v-if="nota.descripcion_servicio" class="nota-desc">{{ nota.descripcion_servicio }}</p>
+                  <p v-if="nota.tipo_servicio" class="nota-tipo">{{ nota.tipo_servicio }}</p>
+                  <p class="nota-fecha">{{ formatearFecha(nota.fecha_hora) }}</p>
+                </div>
+                <div class="nota-acciones" v-if="nota.estado === 'pendiente'">
+                  <button class="btn-mini btn-success" @click="marcarComoPendiente(nota)">✅ Procesar</button>
+                  <button class="btn-mini btn-danger" @click="marcarComoCancelado(nota)">❌ Rechazar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- ACCIONES -->
           <div class="actions-section">
             <button class="btn-navy btn-medium" @click="imprimirBoleta">
@@ -198,7 +220,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getReservas, getServicios, getPerfilHuesped, createServiceNote } from '@/services/api.js';
+import { getReservas, getServicios, getPerfilHuesped, createServiceNote, getNotasServicioPorReserva, actualizarNotaServicio } from '@/services/api.js';
 
 const router = useRouter();
 const reservasActivas = ref([]);
@@ -216,6 +238,11 @@ const consumosSeleccionados = computed(() => {
   return reservaSeleccionada.value.consumos || [];
 });
 
+const notasServicioSeleccionadas = computed(() => {
+  if (!reservaSeleccionada.value) return [];
+  return reservaSeleccionada.value.notas_servicio || [];
+});
+
 async function cargarDatos() {
   try {
     // Cargar reservas activas
@@ -230,6 +257,10 @@ async function cargarDatos() {
         reservasActivas.value[i].monto_servicios = detalles.monto_servicios;
         reservasActivas.value[i].monto_total = detalles.monto_total;
         reservasActivas.value[i].consumos = detalles.consumos || [];
+        
+        // Cargar notas de servicio
+        const notas = await getNotasServicioPorReserva(reservasActivas.value[i].ID_Reserva);
+        reservasActivas.value[i].notas_servicio = Array.isArray(notas) ? notas : [];
       } catch (err) {
         console.warn(`Error cargando detalles de reserva ${reservasActivas.value[i].ID_Reserva}:`, err);
       }
@@ -453,6 +484,39 @@ async function guardarConsumo() {
     nuevoConsumo.value = { ID_Servicio: '', cantidad: 1 };
     // Recargar datos
     await cargarDatos();
+  } catch (error) {
+    alert(`❌ Error: ${error.message}`);
+  }
+}
+
+async function marcarComoPendiente(nota) {
+  try {
+    await actualizarNotaServicio(nota.ID_Nota, { estado: 'entregado' });
+    alert('✅ Servicio marcado como entregado.');
+    // Recargar datos
+    await cargarDatos();
+    if (reservaSeleccionada.value) {
+      const notas = await getNotasServicioPorReserva(reservaSeleccionada.value.ID_Reserva);
+      reservaSeleccionada.value.notas_servicio = Array.isArray(notas) ? notas : [];
+    }
+  } catch (error) {
+    alert(`❌ Error: ${error.message}`);
+  }
+}
+
+async function marcarComoCancelado(nota) {
+  const motivo = prompt('Ingresa el motivo de cancelación:');
+  if (!motivo) return;
+  
+  try {
+    await actualizarNotaServicio(nota.ID_Nota, { estado: 'cancelado', motivo_cancelacion: motivo });
+    alert('✅ Servicio cancelado.');
+    // Recargar datos
+    await cargarDatos();
+    if (reservaSeleccionada.value) {
+      const notas = await getNotasServicioPorReserva(reservaSeleccionada.value.ID_Reserva);
+      reservaSeleccionada.value.notas_servicio = Array.isArray(notas) ? notas : [];
+    }
   } catch (error) {
     alert(`❌ Error: ${error.message}`);
   }
@@ -948,6 +1012,131 @@ onMounted(() => {
 
 .btn-ghost:hover {
   background: #e5e7eb;
+}
+
+/* NOTAS DE SERVICIO */
+.notas-servicio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nota-item {
+  padding: 12px;
+  border-left: 4px solid #3b82f6;
+  background: #f0f9ff;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.nota-item.nota-pendiente {
+  border-left-color: #f59e0b;
+  background: #fef3c7;
+}
+
+.nota-item.nota-entregado {
+  border-left-color: #10b981;
+  background: #ecfdf5;
+}
+
+.nota-item.nota-cancelado {
+  border-left-color: #ef4444;
+  background: #fee2e2;
+}
+
+.nota-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.nota-servicio {
+  font-weight: 600;
+  color: #1f2937;
+  flex: 1;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge--pendiente {
+  background: #fef08a;
+  color: #92400e;
+}
+
+.badge--entregado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge--cancelado {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.nota-detalles {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.nota-desc {
+  margin: 4px 0;
+  font-style: italic;
+}
+
+.nota-tipo {
+  margin: 4px 0;
+  color: #6b7280;
+}
+
+.nota-fecha {
+  margin: 4px 0;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.nota-acciones {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-mini {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.btn-mini.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-mini.btn-success:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-mini.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-mini.btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
 }
 
 /* Responsive */

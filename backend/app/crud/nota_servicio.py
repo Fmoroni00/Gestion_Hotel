@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from decimal import Decimal
+from typing import List
 
-from app.models import Nota_Servicio
+from app.models import Nota_Servicio, Servicio
 from app.schemas.nota_servicio import NotaServicioCreate, NotaServicioUpdate
 
 
@@ -124,3 +125,28 @@ def cambiar_estado_nota_servicio(db: Session, id_nota: int, nota_actualizada: No
     db.commit()
     db.refresh(nota)
     return nota
+
+
+def obtener_notas_servicio_por_reserva(db: Session, id_reserva: int) -> List[dict]:
+    """Retorna notas de servicio con detalles del servicio para mejor presentación."""
+    notas = db.query(Nota_Servicio).filter(Nota_Servicio.ID_Reserva == id_reserva).order_by(Nota_Servicio.fecha_hora.desc()).all()
+    
+    result = []
+    for nota in notas:
+        servicio = nota.servicio if nota.servicio else (db.query(Servicio).filter(Servicio.ID_Servicio == nota.ID_Servicio).first() if nota.ID_Servicio else None)
+        
+        result.append({
+            "ID_Nota": nota.ID_Nota,
+            "estado": nota.estado,
+            "ID_Reserva": nota.ID_Reserva,
+            "ID_Servicio": nota.ID_Servicio,
+            "concepto": nota.concepto,
+            "descripcion": nota.descripcion,
+            "motivo_cancelacion": nota.motivo_cancelacion,
+            "fecha_hora": nota.fecha_hora,
+            "nombre_servicio": servicio.nombre if servicio else (nota.concepto or f"Servicio #{nota.ID_Servicio}"),
+            "descripcion_servicio": servicio.descripcion if servicio else "",
+            "tipo_servicio": servicio.tipo if servicio else ""
+        })
+    
+    return result

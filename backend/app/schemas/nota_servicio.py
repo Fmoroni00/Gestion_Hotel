@@ -34,5 +34,9 @@ class NotaServicioUpdate(BaseModel):
 class NotaServicioResponse(NotaServicioBase):
     ID_Nota: int
     fecha_hora: datetime
+    # Detalles del servicio para mejor presentación
+    nombre_servicio: Optional[str] = None
+    descripcion_servicio: Optional[str] = None
+    tipo_servicio: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

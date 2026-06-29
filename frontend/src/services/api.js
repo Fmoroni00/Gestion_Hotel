@@ -221,6 +221,18 @@ export async function getNotasServicio() {
   return await _handleResponse(response)
 }
 
+export async function getNotasServicioPorReserva(idReserva) {
+  const token = localStorage.getItem('access_token')
+  const response = await fetch(`${BASE_URL}/api/v1/notas-servicio/reserva/${idReserva}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  })
+  return await _handleResponse(response)
+}
+
 export async function actualizarNotaServicio(idNota, payload) {
   const token = localStorage.getItem('access_token')
   const response = await fetch(`${BASE_URL}/api/v1/notas-servicio/${idNota}`, {

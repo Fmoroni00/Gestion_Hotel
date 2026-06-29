@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
-from app.crud.nota_servicio import crear_nota_servicio, cambiar_estado_nota_servicio
+from app.crud.nota_servicio import crear_nota_servicio, cambiar_estado_nota_servicio, obtener_notas_servicio_por_reserva
 from app.crud.historial import registrar_historial
 from app.schemas.nota_servicio import NotaServicioCreate, NotaServicioResponse, NotaServicioUpdate
 from app.schemas.historial import HistorialCreate
@@ -64,3 +64,12 @@ def actualizar_estado_nota_servicio(
         )
     )
     return nota
+
+
+@router.get("/reserva/{id_reserva}", response_model=List[dict])
+def obtener_notas_servicio_por_reserva_endpoint(
+    id_reserva: int,
+    db: Session = Depends(get_db)
+):
+    """Obtiene todas las notas de servicio de una reserva con detalles de servicios."""
+    return obtener_notas_servicio_por_reserva(db, id_reserva)
