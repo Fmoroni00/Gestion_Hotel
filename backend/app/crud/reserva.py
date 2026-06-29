@@ -101,6 +101,15 @@ def cambiar_estado_reserva(
         if reserva.habitacion:
             reserva.habitacion.estado = "disponible"
 
+        if reserva.asignacion_parking:
+            try:
+                if reserva.asignacion_parking.parking:
+                    reserva.asignacion_parking.parking.estado = "disponible"
+                db.delete(reserva.asignacion_parking)
+            except Exception:
+                # No queremos que falle la transición principal si la liberación de parking falla
+                pass
+
     # Generar boleta automáticamente si la reserva se marca como terminada (check-out)
     try:
         if nuevo_estado == EstadoReserva.terminada:

@@ -27,6 +27,32 @@ def _generar_numero_boleta(db: Session) -> Tuple[str, int, str]:
     return serie, siguiente, numero_boleta
 
 
+def _asegurar_boleta_completa(db: Session, boleta: Boleta, monto_total: Decimal) -> None:
+    updated = False
+    if not boleta:
+        return
+
+    if not boleta.serie or boleta.correlativo is None:
+        boleta.serie, boleta.correlativo, _ = _generar_numero_boleta(db)
+        updated = True
+
+    if not boleta.fecha:
+        boleta.fecha = date.today()
+        updated = True
+
+    if boleta.total is None or boleta.total == 0:
+        boleta.total = monto_total
+        updated = True
+
+    if not boleta.estado:
+        boleta.estado = 'generada'
+        updated = True
+
+    if updated:
+        db.commit()
+        db.refresh(boleta)
+
+
 def obtener_estado_cuenta_reserva(db: Session, id_reserva: int):
     reserva = db.query(Reserva).filter(Reserva.ID_Reserva == id_reserva).first()
     if not reserva:
@@ -46,6 +72,8 @@ def obtener_estado_cuenta_reserva(db: Session, id_reserva: int):
 
     # Obtener estado de boleta si existe
     boleta = db.query(Boleta).filter(Boleta.ID_Reserva == id_reserva).first()
+    if boleta:
+        _asegurar_boleta_completa(db, boleta, monto_total)
     estado_boleta = boleta.estado if boleta else "generada"
 
     return {
@@ -78,6 +106,15 @@ def generar_boleta_final(db: Session, id_reserva: int) -> Boleta:
 
     boleta_existente = db.query(Boleta).filter(Boleta.ID_Reserva == id_reserva).first()
     if boleta_existente:
+        # Asegurar que la boleta existente tenga todos los campos válidos.
+        if not boleta_existente.serie:
+            boleta_existente.serie, boleta_existente.correlativo, _ = _generar_numero_boleta(db)
+        if not boleta_existente.fecha:
+            boleta_existente.fecha = date.today()
+        if boleta_existente.total is None or boleta_existente.total == 0:
+            boleta_existente.total = monto_total
+        db.commit()
+        db.refresh(boleta_existente)
         return boleta_existente
 
     serie, correlativo, numero_boleta = _generar_numero_boleta(db)

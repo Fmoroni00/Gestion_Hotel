@@ -443,7 +443,7 @@ async function loadTickets() {
                           (t.concepto && t.concepto.toLowerCase().includes('cochera'))
         return {
           id: t.ID_Nota,
-          title: t.concepto || 'Servicio Especial',
+          title: t.nombre_servicio || t.concepto || 'Servicio Especial',
           guest: `Reserva #${t.ID_Reserva}`,
           validated: t.estado !== 'pendiente',
           delivered: t.estado === 'entregado' || t.estado === 'completado',
