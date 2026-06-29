@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from typing import List, Optional
 from decimal import Decimal
 from datetime import date
 
@@ -26,5 +26,6 @@ class EstadoCuentaResponse(BaseModel):
     consumos: List[ConsumoResponse]
     estado_reserva: str
     estado_boleta: str
+    numero_cochera: int | None = None
 
     model_config = ConfigDict(from_attributes=True)

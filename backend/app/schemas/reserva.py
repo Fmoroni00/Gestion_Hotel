@@ -46,9 +46,12 @@ class ReservaResponse(BaseModel):
     ID_Reserva: int
     DNI: str
     ID_Habitacion: int
+    numero_habitacion: int | None = None
+    huesped_nombre: str | None = None
     fecha_entrada: date
     fecha_salida: date
     precio_total: float | Decimal
     estado: EstadoReserva
+    numero_cochera: int | None = None
 
     model_config = ConfigDict(from_attributes=True)

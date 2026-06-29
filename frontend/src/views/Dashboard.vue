@@ -734,6 +734,10 @@ async function validateTicket(ticketId) {
     // Desaparece inmediatamente de la lista activa en el frontend
     tickets.value = tickets.value.filter(x => x.id !== ticketId)
     loadAvailableParkings()
+    // Refrescar datos de reservas y mantener la selección para ver la cochera asignada
+    if (typeof cargarDatos === 'function') {
+      await cargarDatos()
+    }
   } catch (err) {
     console.error('Error al validar ticket:', err)
     alert('❌ No se pudo validar el ticket: ' + err.message)

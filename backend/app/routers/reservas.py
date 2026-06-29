@@ -34,14 +34,21 @@ def _calcular_precio_total(reserva: Reserva) -> Decimal:
 
 
 def _construir_respuesta_reserva(reserva: Reserva) -> ReservaResponse:
+    numero_cochera = None
+    if reserva.asignacion_parking and reserva.asignacion_parking.parking:
+        numero_cochera = reserva.asignacion_parking.parking.numero
+
     payload = {
         "ID_Reserva": reserva.ID_Reserva,
         "DNI": reserva.DNI,
         "ID_Habitacion": reserva.ID_Habitacion,
+        "numero_habitacion": reserva.habitacion.numero if reserva.habitacion else None,
+        "huesped_nombre": f"{reserva.huesped.nombre} {reserva.huesped.apellido}" if reserva.huesped else None,
         "fecha_entrada": reserva.fecha_entrada.date() if isinstance(reserva.fecha_entrada, datetime) else reserva.fecha_entrada,
         "fecha_salida": reserva.fecha_salida.date() if isinstance(reserva.fecha_salida, datetime) else reserva.fecha_salida,
         "precio_total": float(_calcular_precio_total(reserva)),
         "estado": _map_db_estado_a_api(reserva.estado),
+        "numero_cochera": numero_cochera,
     }
     return ReservaResponse.model_validate(payload)
 

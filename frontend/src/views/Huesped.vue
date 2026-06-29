@@ -62,12 +62,16 @@
           <button
             class="btn-navy btn-large btn-full"
             @click="solicitarCochera()"
-            :disabled="cocheraBotonDesactivado"
+            :disabled="cocheraBotonDesactivado || Boolean(datosHuesped.numero_cochera)"
           >
-            {{ cocheraBotonTexto }}
+            {{ datosHuesped.numero_cochera ? 'Cochera Asignada' : cocheraBotonTexto }}
           </button>
         </div>
         <p class="card-info">Si ya tienes asignada una cochera, el número aparecerá aquí.</p>
+        <div v-if="datosHuesped.numero_cochera" class="parking-assigned">
+          <span class="parking-assigned__label">Cochera asignada</span>
+          <span class="parking-assigned__value">#{{ datosHuesped.numero_cochera }}</span>
+        </div>
       </div>
 
       <!-- TARJETA 3: SOLICITUDES DE SERVICIO -->
@@ -117,7 +121,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { getPerfilHuesped, getServiciosDisponibles, createServiceNote } from '@/services/api.js';
 
@@ -129,7 +133,8 @@ const datosHuesped = ref({
   monto_total: 0,
   consumos: [],
   estado_reserva: '',
-  estado_boleta: ''
+  estado_boleta: '',
+  numero_cochera: null
 });
 const servicios = ref([]);
 const cargando = ref(true);
@@ -161,7 +166,8 @@ async function cargarPerfil() {
       monto_total: data.monto_total || 0,
       consumos: data.consumos || [],
       estado_reserva: data.estado_reserva || '',
-      estado_boleta: data.estado_boleta || ''
+      estado_boleta: data.estado_boleta || '',
+      numero_cochera: data.numero_cochera ?? null
     };
   } catch (error) {
     console.error('Error cargando perfil:', error);
@@ -390,9 +396,23 @@ function logout() {
   router.push('/');
 }
 
+let perfilInterval = null;
+
 onMounted(() => {
   cargarPerfil();
   cargarServicios();
+  perfilInterval = window.setInterval(() => {
+    if (!estadiaFinalizada.value) {
+      cargarPerfil();
+    }
+  }, 15000);
+});
+
+onUnmounted(() => {
+  if (perfilInterval) {
+    window.clearInterval(perfilInterval);
+    perfilInterval = null;
+  }
 });
 </script>
 

@@ -20,10 +20,11 @@ app = FastAPI(
 # 4. Configuramos CORS para que tu frontend (Vue) pueda conectarse sin problemas
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"], 
+    allow_origins=["*"],
+    allow_origin_regex=r"https?://.*",
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 # 5. Registramos las rutas

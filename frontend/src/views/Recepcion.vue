@@ -40,6 +40,7 @@
               <div class="reserva-detalles">
                 <p><strong>Huésped:</strong> {{ reserva.huesped_nombre || 'Sin nombre' }}</p>
                 <p><strong>Habitación:</strong> {{ reserva.numero_habitacion }}</p>
+                <p><strong>Cochera:</strong> {{ reserva.numero_cochera ? `#${reserva.numero_cochera}` : 'No asignada' }}</p>
                 <p><strong>Entrada:</strong> {{ formatearFechaCorta(reserva.fecha_entrada) }}</p>
               </div>
               <div class="reserva-monto">
@@ -66,6 +67,10 @@
             <div class="detail-box">
               <label>Habitación</label>
               <span class="value">{{ reservaSeleccionada.numero_habitacion }}</span>
+            </div>
+            <div class="detail-box">
+              <label>Cochera</label>
+              <span class="value">{{ reservaSeleccionada.numero_cochera ? `#${reservaSeleccionada.numero_cochera}` : 'No asignada' }}</span>
             </div>
             <div class="detail-box">
               <label>Check-in</label>
@@ -245,6 +250,8 @@ const notasServicioSeleccionadas = computed(() => {
 
 async function cargarDatos() {
   try {
+    const selectedReservaId = reservaSeleccionada.value?.ID_Reserva;
+
     // Cargar reservas activas
     const reservasData = await getReservas('activa');
     reservasActivas.value = Array.isArray(reservasData) ? reservasData : [];
@@ -257,12 +264,21 @@ async function cargarDatos() {
         reservasActivas.value[i].monto_servicios = detalles.monto_servicios;
         reservasActivas.value[i].monto_total = detalles.monto_total;
         reservasActivas.value[i].consumos = detalles.consumos || [];
+        reservasActivas.value[i].numero_cochera = detalles.numero_cochera || null;
         
         // Cargar notas de servicio
         const notas = await getNotasServicioPorReserva(reservasActivas.value[i].ID_Reserva);
         reservasActivas.value[i].notas_servicio = Array.isArray(notas) ? notas : [];
       } catch (err) {
         console.warn(`Error cargando detalles de reserva ${reservasActivas.value[i].ID_Reserva}:`, err);
+      }
+    }
+
+    // Reasignar reserva seleccionada si estaba activa
+    if (selectedReservaId) {
+      const actualizada = reservasActivas.value.find(r => r.ID_Reserva === selectedReservaId);
+      if (actualizada) {
+        reservaSeleccionada.value = actualizada;
       }
     }
 

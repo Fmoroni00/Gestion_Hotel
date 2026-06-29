@@ -76,6 +76,10 @@ def obtener_estado_cuenta_reserva(db: Session, id_reserva: int):
         _asegurar_boleta_completa(db, boleta, monto_total)
     estado_boleta = boleta.estado if boleta else "generada"
 
+    numero_cochera = None
+    if reserva.asignacion_parking and reserva.asignacion_parking.parking:
+        numero_cochera = reserva.asignacion_parking.parking.numero
+
     return {
         "ID_Reserva": id_reserva,
         "monto_hospedaje": float(monto_hospedaje),
@@ -83,7 +87,8 @@ def obtener_estado_cuenta_reserva(db: Session, id_reserva: int):
         "monto_total": float(monto_total),
         "consumos": consumos,
         "estado_reserva": reserva.estado,
-        "estado_boleta": estado_boleta
+        "estado_boleta": estado_boleta,
+        "numero_cochera": numero_cochera
     }
 
 
