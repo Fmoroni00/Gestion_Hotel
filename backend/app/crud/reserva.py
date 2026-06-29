@@ -42,7 +42,7 @@ def obtener_reservas(
         estado_db = _map_estado_api_to_db(estado)
         query = query.filter(Reserva.estado == estado_db)
 
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Reserva.ID_Reserva.desc()).offset(skip).limit(limit).all()
 
 
 def obtener_reserva_por_id(db: Session, id_reserva: int) -> Optional[Reserva]:

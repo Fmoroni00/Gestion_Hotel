@@ -319,7 +319,7 @@ export async function createCodigoAcceso(codigo) {
 // NUEVAS FUNCIONES: getReservas y actualizarEstadoReserva
 export async function getReservas(estado = null) {
   const token = localStorage.getItem('access_token')
-  const query = estado ? `?estado=${encodeURIComponent(estado)}` : ''
+  const query = estado ? `?estado=${encodeURIComponent(estado)}&limit=100` : '?limit=100'
   const response = await fetch(`${BASE_URL}/api/v1/reservas/${query}`, {
     method: 'GET',
     headers: {
