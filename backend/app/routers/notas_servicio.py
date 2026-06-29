@@ -7,23 +7,49 @@ from app.crud.nota_servicio import crear_nota_servicio, cambiar_estado_nota_serv
 from app.crud.historial import registrar_historial
 from app.schemas.nota_servicio import NotaServicioCreate, NotaServicioResponse, NotaServicioUpdate
 from app.schemas.historial import HistorialCreate
-from app.models import Nota_Servicio
+from app.models import Nota_Servicio, Servicio
 
 router = APIRouter(prefix="/notas-servicio", tags=["Notas de Servicio"])
 
 
-@router.get("/reserva/{id_reserva}", response_model=List[dict])
+def _nota_servicio_response(nota: Nota_Servicio, db: Session = None):
+    """Convierte una Nota_Servicio a un dict compatible con NotaServicioResponse."""
+    servicio = nota.servicio
+    if not servicio and nota.ID_Servicio:
+        if db:
+            servicio = db.query(Servicio).filter(Servicio.ID_Servicio == nota.ID_Servicio).first()
+    
+    return {
+        "ID_Nota": nota.ID_Nota,
+        "estado": nota.estado,
+        "ID_Reserva": nota.ID_Reserva,
+        "ID_Servicio": nota.ID_Servicio,
+        "concepto": nota.concepto,
+        "descripcion": nota.descripcion,
+        "motivo_cancelacion": nota.motivo_cancelacion,
+        "fecha_hora": nota.fecha_hora,
+        "nombre_servicio": servicio.nombre if servicio else (nota.concepto or f"Servicio #{nota.ID_Servicio}"),
+        "descripcion_servicio": servicio.descripcion if servicio else "",
+        "tipo_servicio": servicio.tipo if servicio else ""
+    }
+
+
+
+@router.get("/reserva/{id_reserva}", response_model=List[NotaServicioResponse])
 def obtener_notas_servicio_por_reserva_endpoint(
     id_reserva: int,
     db: Session = Depends(get_db)
 ):
     """Obtiene todas las notas de servicio de una reserva con detalles de servicios."""
-    return obtener_notas_servicio_por_reserva(db, id_reserva)
+    notas = obtener_notas_servicio_por_reserva(db, id_reserva)
+    return [_nota_servicio_response(nota, db) for nota in notas]
+
 
 
 @router.get("/", response_model=List[NotaServicioResponse])
 def listar_notas_servicio_endpoint(db: Session = Depends(get_db)):
-    return db.query(Nota_Servicio).order_by(Nota_Servicio.fecha_hora.desc()).all()
+    notas = db.query(Nota_Servicio).order_by(Nota_Servicio.fecha_hora.desc()).all()
+    return [_nota_servicio_response(nota, db) for nota in notas]
 
 
 @router.post("/", response_model=NotaServicioResponse, status_code=status.HTTP_201_CREATED)
@@ -43,7 +69,7 @@ def crear_nota_servicio_endpoint(
 
     try:
         nueva_nota = crear_nota_servicio(db, nota)
-        return nueva_nota
+        return _nota_servicio_response(nueva_nota, db)
     except ValueError as error:
         db.rollback()
         raise HTTPException(
@@ -72,4 +98,4 @@ def actualizar_estado_nota_servicio(
             accion=f"Nota de servicio ID {id_nota} marcada como {nota_actualizada.estado.value}{motivo_str}"
         )
     )
-    return nota
+    return _nota_servicio_response(nota, db)
