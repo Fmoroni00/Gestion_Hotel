@@ -804,10 +804,15 @@ async function reportDirty(room) {
 // Huésped: cargar información de estadía
 async function loadEstadiaHuesped() {
   try {
-    // Intentar obtener la estadía actual del huésped con getEstadiaHuesped()
-    // Este endpoint debe buscar sin restricción de estado (activa, terminada, etc)
-    let data = await getEstadiaHuesped()
-    console.log('Datos de estadía desde getEstadiaHuesped:', data)
+    let data = null
+    try {
+      // Intentar obtener la estadía actual del huésped con getEstadiaHuesped()
+      // Este endpoint debe buscar sin restricción de estado (activa, terminada, etc)
+      data = await getEstadiaHuesped()
+      console.log('Datos de estadía desde getEstadiaHuesped:', data)
+    } catch (e) {
+      console.warn('getEstadiaHuesped falló, intentando fallback', e)
+    }
 
     // Si falla y hay ID_Reserva en localStorage, intentar con getPerfilHuesped
     if (!data && localStorage.getItem('id_reserva')) {
