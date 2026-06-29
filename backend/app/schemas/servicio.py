@@ -41,5 +41,9 @@ class ConsumoResponse(ConsumoBase):
     ID_Consumo: int
     fecha: datetime
     subtotal: float | Decimal
+    # Detalles del servicio para mejor presentación
+    nombre_servicio: Optional[str] = Field(None, description="Nombre del servicio")
+    descripcion_servicio: Optional[str] = Field(None, description="Descripción del servicio")
+    tipo_servicio: Optional[str] = Field(None, description="Tipo del servicio")
 
     model_config = ConfigDict(from_attributes=True)

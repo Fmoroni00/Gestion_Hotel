@@ -54,5 +54,26 @@ def registrar_consumo_reserva(db: Session, consumo: ConsumoCreate) -> Consumo:
     return db_consumo
 
 
-def obtener_consumos_por_reserva(db: Session, id_reserva: int) -> List[Consumo]:
-    return db.query(Consumo).filter(Consumo.ID_Reserva == id_reserva).order_by(Consumo.fecha).all()
+def obtener_consumos_por_reserva(db: Session, id_reserva: int) -> List[dict]:
+    """Retorna consumos con detalles del servicio para mejor presentación."""
+    consumos = db.query(Consumo).filter(Consumo.ID_Reserva == id_reserva).order_by(Consumo.fecha).all()
+    
+    result = []
+    for consumo in consumos:
+        subtotal = float(consumo.precio_unitario * consumo.cantidad) if consumo.precio_unitario else 0
+        servicio = consumo.servicio or db.query(Servicio).filter(Servicio.ID_Servicio == consumo.ID_Servicio).first()
+        
+        result.append({
+            "ID_Consumo": consumo.ID_Consumo,
+            "ID_Reserva": consumo.ID_Reserva,
+            "ID_Servicio": consumo.ID_Servicio,
+            "cantidad": consumo.cantidad,
+            "fecha": consumo.fecha,
+            "precio_unitario": float(consumo.precio_unitario) if consumo.precio_unitario else 0,
+            "subtotal": subtotal,
+            "nombre_servicio": servicio.nombre if servicio else f"Servicio #{consumo.ID_Servicio}",
+            "descripcion_servicio": servicio.descripcion if servicio else "",
+            "tipo_servicio": servicio.tipo if servicio else ""
+        })
+    
+    return result

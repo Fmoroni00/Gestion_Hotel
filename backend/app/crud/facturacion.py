@@ -11,7 +11,11 @@ from app.crud.servicio import obtener_consumos_por_reserva
 def _calcular_monto_servicios(consumos) -> Decimal:
     total = Decimal(0)
     for consumo in consumos:
-        total += Decimal(consumo.precio_unitario) * consumo.cantidad
+        # Maneja tanto dict como objetos SQLAlchemy
+        precio = consumo.get('precio_unitario') if isinstance(consumo, dict) else consumo.precio_unitario
+        cantidad = consumo.get('cantidad') if isinstance(consumo, dict) else consumo.cantidad
+        if precio and cantidad:
+            total += Decimal(str(precio)) * Decimal(str(cantidad))
     return total
 
 
