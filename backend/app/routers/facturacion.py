@@ -23,15 +23,35 @@ def _servicio_response(servicio):
 
 
 def _consumo_response(consumo):
-    subtotal = float(consumo.precio_unitario * consumo.cantidad)
-    return {
-        "ID_Consumo": consumo.ID_Consumo,
-        "ID_Reserva": consumo.ID_Reserva,
-        "ID_Servicio": consumo.ID_Servicio,
-        "cantidad": consumo.cantidad,
-        "fecha": consumo.fecha,
-        "subtotal": subtotal
-    }
+    # Manejar tanto dicts como objetos SQLAlchemy
+    if isinstance(consumo, dict):
+        return {
+            "ID_Consumo": consumo.get("ID_Consumo"),
+            "ID_Reserva": consumo.get("ID_Reserva"),
+            "ID_Servicio": consumo.get("ID_Servicio"),
+            "cantidad": consumo.get("cantidad"),
+            "fecha": consumo.get("fecha"),
+            "precio_unitario": consumo.get("precio_unitario", 0),
+            "subtotal": consumo.get("subtotal", 0),
+            "nombre_servicio": consumo.get("nombre_servicio"),
+            "descripcion_servicio": consumo.get("descripcion_servicio"),
+            "tipo_servicio": consumo.get("tipo_servicio")
+        }
+    else:
+        # Objeto SQLAlchemy
+        subtotal = float(consumo.precio_unitario * consumo.cantidad) if consumo.precio_unitario else 0
+        return {
+            "ID_Consumo": consumo.ID_Consumo,
+            "ID_Reserva": consumo.ID_Reserva,
+            "ID_Servicio": consumo.ID_Servicio,
+            "cantidad": consumo.cantidad,
+            "fecha": consumo.fecha,
+            "precio_unitario": float(consumo.precio_unitario) if consumo.precio_unitario else 0,
+            "subtotal": subtotal,
+            "nombre_servicio": getattr(consumo, "nombre_servicio", None),
+            "descripcion_servicio": getattr(consumo, "descripcion_servicio", None),
+            "tipo_servicio": getattr(consumo, "tipo_servicio", None)
+        }
 
 
 @router.post("/servicios", response_model=ServicioResponse, status_code=status.HTTP_201_CREATED)
