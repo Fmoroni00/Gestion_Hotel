@@ -164,7 +164,9 @@ async function cargarPerfil() {
       estado_boleta: data.estado_boleta || ''
     };
   } catch (error) {
-    errorMsg.value = error?.message || 'No se pudieron cargar los datos del huésped.';
+    console.error('Error cargando perfil:', error);
+    // Ofrece opción de descargar boleta incluso si hay error
+    errorMsg.value = 'No se pudieron cargar los datos completos, pero puedes descargar tu boleta en el botón inferior.';
   } finally {
     cargando.value = false;
   }
