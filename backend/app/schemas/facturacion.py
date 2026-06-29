@@ -24,5 +24,7 @@ class EstadoCuentaResponse(BaseModel):
     monto_servicios: float | Decimal
     monto_total: float | Decimal
     consumos: List[ConsumoResponse]
+    estado_reserva: str
+    estado_boleta: str
 
     model_config = ConfigDict(from_attributes=True)
