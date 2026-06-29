@@ -40,6 +40,7 @@
               <div class="reserva-detalles">
                 <p><strong>Huésped:</strong> {{ reserva.huesped_nombre || 'Sin nombre' }}</p>
                 <p><strong>Habitación:</strong> {{ reserva.numero_habitacion }}</p>
+                <p v-if="reserva.amenidades && reserva.amenidades.length"><strong>Amenidades:</strong> {{ reserva.amenidades.join(', ') }}</p>
                 <p><strong>Cochera:</strong> {{ reserva.numero_cochera ? `#${reserva.numero_cochera}` : 'No asignada' }}</p>
                 <p><strong>Entrada:</strong> {{ formatearFechaCorta(reserva.fecha_entrada) }}</p>
               </div>
@@ -67,6 +68,10 @@
             <div class="detail-box">
               <label>Habitación</label>
               <span class="value">{{ reservaSeleccionada.numero_habitacion }}</span>
+            </div>
+            <div v-if="reservaSeleccionada.amenidades && reservaSeleccionada.amenidades.length" class="detail-box">
+              <label>Amenidades</label>
+              <span class="value">{{ reservaSeleccionada.amenidades.join(', ') }}</span>
             </div>
             <div class="detail-box">
               <label>Cochera</label>
@@ -255,6 +260,11 @@ async function cargarDatos() {
     // Cargar reservas activas
     const reservasData = await getReservas('activa');
     reservasActivas.value = Array.isArray(reservasData) ? reservasData : [];
+
+    reservasActivas.value = reservasActivas.value.map(reserva => ({
+      ...reserva,
+      amenidades: Array.isArray(reserva.amenidades) ? reserva.amenidades : [],
+    }));
 
     // Cargar cada reserva con detalles completos
     for (let i = 0; i < reservasActivas.value.length; i++) {

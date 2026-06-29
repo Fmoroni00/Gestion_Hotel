@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
 from sqlalchemy.orm import Session
 from typing import List
 from decimal import Decimal
 from datetime import datetime
 
 from app.core.database import get_db
+from app.core.security import extraer_datos_token
 from app.crud.reserva import (
     obtener_reservas,
     obtener_reserva_por_id,
@@ -14,7 +15,7 @@ from app.crud.reserva import (
 from app.crud.historial import registrar_historial
 from app.schemas.reserva import ReservaCreate, ReservaResponse, EstadoReserva
 from app.schemas.historial import HistorialCreate
-from app.models import Reserva
+from app.models import Reserva, Usuario
 
 
 router = APIRouter(prefix="/reservas", tags=["Reservas"])
@@ -83,10 +84,18 @@ def obtener_reserva(id_reserva: int, db: Session = Depends(get_db)):
 @router.post("/", response_model=ReservaResponse, status_code=status.HTTP_201_CREATED)
 def crear_reserva(
     reserva: ReservaCreate,
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
+    usuario_actual = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1]
+        payload = extraer_datos_token(token)
+        if payload.get("user_type") == "staff" and payload.get("id") is not None:
+            usuario_actual = db.query(Usuario).filter(Usuario.ID_Usuario == payload.get("id")).first()
+
     try:
-        nueva_reserva = crear_nueva_reserva(db, reserva)
+        nueva_reserva = crear_nueva_reserva(db, reserva, usuario_actual=usuario_actual)
         registrar_historial(
             db,
             HistorialCreate(

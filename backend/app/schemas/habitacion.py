@@ -35,5 +35,6 @@ class HabitacionUpdate(BaseModel):
 class HabitacionResponse(HabitacionBase):
     """Esquema de respuesta con ID de la Habitación."""
     ID_Habitacion: int
+    amenidades: list[str] = Field(default_factory=list, description="Nombres de las amenidades asociadas")
 
     model_config = ConfigDict(from_attributes=True)

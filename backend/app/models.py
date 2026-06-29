@@ -96,6 +96,18 @@ class Habitacion(Base):
     # Relaciones virtuales
     reservas = relationship("Reserva", back_populates="habitacion")
     historiales = relationship("Historial", back_populates="habitacion")
+    amenidades_rel = relationship(
+        "Amenidad",
+        secondary="Habitacion_Amenidad",
+        primaryjoin="Habitacion.ID_Habitacion == Habitacion_Amenidad.ID_Habitacion",
+        secondaryjoin="Amenidad.ID_Amenidad == Habitacion_Amenidad.ID_Amenidad",
+        viewonly=True,
+        lazy="selectin",
+    )
+
+    @property
+    def amenidades(self):
+        return [amenidad.nombre for amenidad in self.amenidades_rel or []]
 
 
 # ============================================================

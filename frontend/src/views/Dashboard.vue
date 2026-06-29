@@ -45,6 +45,9 @@
             <div class="room-row__info">
               <strong>Hab {{ room.numero }}</strong>
               <span class="room-row__meta">Tipo: {{ room.tipo || 'N/A' }} · Precio: {{ room.precio_noche || '-' }}</span>
+              <span v-if="room.amenidades && room.amenidades.length" class="room-row__meta">
+                Amenidades: {{ room.amenidades.join(', ') }}
+              </span>
             </div>
             <span class="status-badge" :class="`status-badge--${room.estado}`">
               <span class="status-badge__dot"></span>{{ room.estado }}
@@ -176,6 +179,9 @@
             <div class="room-row__info">
               <strong>Hab {{ room.numero }}</strong>
               <span class="room-row__meta">Tipo: {{ room.tipo || 'N/A' }} — Precio: {{ room.precio_noche || '-' }}</span>
+              <span v-if="room.amenidades && room.amenidades.length" class="room-row__meta">
+                Amenidades: {{ room.amenidades.join(', ') }}
+              </span>
             </div>
             <div class="room-row__actions">
               <button class="btn-gold btn-sm" @click="registerCheckOut(room)" v-if="room.estado === 'ocupada'">Registrar Check-Out</button>
@@ -259,6 +265,9 @@
             <div class="room-row__info">
               <strong>Hab {{ room.numero }}</strong>
               <span class="room-row__meta">Tipo: {{ room.tipo || 'N/A' }} · Precio: {{ room.precio_noche || '-' }}</span>
+              <span v-if="room.amenidades && room.amenidades.length" class="room-row__meta">
+                Amenidades: {{ room.amenidades.join(', ') }}
+              </span>
             </div>
             <div class="room-row__actions">
               <span class="status-badge" :class="`status-badge--${room.estado}`">
@@ -496,6 +505,7 @@ async function loadRooms() {
           estado: item.estado,
           tipo: item.tipo,
           precio_noche: item.precio_noche,
+          amenidades: Array.isArray(item.amenidades) ? item.amenidades : [],
         }))
       : []
   } catch (err) {

@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from app.models import Habitacion, Huesped, Recepcionista, Reserva, Codigo_Acceso
+from app.models import Habitacion, Huesped, Recepcionista, Reserva, Codigo_Acceso, Usuario
 from app.schemas.reserva import ReservaCreate, ReservaUpdate, EstadoReserva
 
 # Nuevo: importar facturación e historial para emitir boleta al terminar la reserva
@@ -49,7 +49,7 @@ def obtener_reserva_por_id(db: Session, id_reserva: int) -> Optional[Reserva]:
     return db.query(Reserva).filter(Reserva.ID_Reserva == id_reserva).first()
 
 
-def crear_nueva_reserva(db: Session, reserva: ReservaCreate) -> Reserva:
+def crear_nueva_reserva(db: Session, reserva: ReservaCreate, usuario_actual: Optional[Usuario] = None) -> Reserva:
     huesped = db.query(Huesped).filter(Huesped.DNI == reserva.Huesped_DNI).first()
     if not huesped:
         raise ValueError(f"Huésped con DNI {reserva.Huesped_DNI} no encontrado")
@@ -66,9 +66,19 @@ def crear_nueva_reserva(db: Session, reserva: ReservaCreate) -> Reserva:
     if reserva.fecha_salida <= reserva.fecha_entrada:
         raise ValueError("La fecha de salida debe ser posterior a la fecha de entrada")
 
-    recepcionista = db.query(Recepcionista).first()
-    if not recepcionista:
-        raise ValueError("No hay recepcionista registrado para asignar la reserva")
+    recepcionista_id = None
+    if usuario_actual and getattr(usuario_actual, "rol", None) == "recepcionista":
+        recepcionista_id = usuario_actual.ID_Usuario
+    elif usuario_actual and getattr(usuario_actual, "rol", None) == "administrador":
+        recepcionista = db.query(Recepcionista).filter(Recepcionista.ID_Usuario == usuario_actual.ID_Usuario).first()
+        if recepcionista:
+            recepcionista_id = recepcionista.ID_Usuario
+
+    if recepcionista_id is None:
+        recepcionista = db.query(Recepcionista).first()
+        if not recepcionista:
+            raise ValueError("No hay recepcionista registrado para asignar la reserva")
+        recepcionista_id = recepcionista.ID_Usuario
 
     db_reserva = Reserva(
         fecha_entrada=_fecha_datetime(reserva.fecha_entrada),
@@ -76,7 +86,7 @@ def crear_nueva_reserva(db: Session, reserva: ReservaCreate) -> Reserva:
         estado=_map_estado_api_to_db(reserva.estado),
         DNI=reserva.Huesped_DNI,
         ID_Habitacion=reserva.ID_Habitacion,
-        ID_Recepcionista=recepcionista.ID_Usuario
+        ID_Recepcionista=recepcionista_id
     )
 
     habitacion.estado = "ocupada"
