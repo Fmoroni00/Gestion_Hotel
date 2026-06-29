@@ -672,46 +672,53 @@ async function submitCheckIn() {
 async function registerCheckOut(room) {
   if (!room || !room.ID_Habitacion) return
   try {
-    // 1. Buscar la reserva de esa habitación (probar con 'confirmada' primero, que es el estado del check-in)
-    let reservaActiva = null
-    
-    // Intentar con estado 'confirmada' (estado real del check-in)
-    try {
-      const reservasConfirmadas = await getReservas('confirmada')
-      reservaActiva = (Array.isArray(reservasConfirmadas) ? reservasConfirmadas : [])
-        .find(r => r.ID_Habitacion === room.ID_Habitacion)
-    } catch (e) {
-      console.warn('No se encontraron reservas confirmadas:', e)
-    }
+    const estadosBuscados = ['activa', 'confirmada', 'pendiente']
+    let reservasActivas = []
 
-    // Si no se encontró, intentar buscando todas las reservas pendientes
-    if (!reservaActiva) {
+    for (const estado of estadosBuscados) {
       try {
-        const reservasPendientes = await getReservas('pendiente')
-        reservaActiva = (Array.isArray(reservasPendientes) ? reservasPendientes : [])
-          .find(r => r.ID_Habitacion === room.ID_Habitacion)
+        const reservasPorEstado = await getReservas(estado)
+        reservasActivas = reservasActivas.concat(
+          (Array.isArray(reservasPorEstado) ? reservasPorEstado : [])
+            .filter(r => r.ID_Habitacion === room.ID_Habitacion)
+        )
       } catch (e) {
-        console.warn('No se encontraron reservas pendientes:', e)
+        console.warn(`No se pudieron cargar reservas ${estado}:`, e)
       }
     }
-    
-    if (!reservaActiva) {
+
+    if (!reservasActivas.length) {
+      try {
+        const todasReservas = await getReservas(null)
+        reservasActivas = (Array.isArray(todasReservas) ? todasReservas : [])
+          .filter(r => r.ID_Habitacion === room.ID_Habitacion && !['terminada', 'cancelada'].includes(r.estado))
+      } catch (e) {
+        console.warn('No se pudieron cargar todas las reservas:', e)
+      }
+    }
+
+    if (!reservasActivas.length) {
       alert('⚠️ No se encontró una reserva activa para esta habitación.')
       return
     }
 
-    // 2. Actualizar estado de reserva a 'terminada' (genera boleta y desactiva código en backend)
-    const respReserva = await actualizarEstadoReserva(reservaActiva.ID_Reserva, 'terminada')
-    console.log('Reserva actualizada a terminada:', respReserva)
+    reservasActivas = reservasActivas.sort((a, b) => new Date(b.fecha_entrada) - new Date(a.fecha_entrada))
 
-    // 3. Marcar habitación en mantenimiento
+    for (const reserva of reservasActivas) {
+      try {
+        const respReserva = await actualizarEstadoReserva(reserva.ID_Reserva, 'terminada')
+        console.log('Reserva finalizada automáticamente:', respReserva)
+      } catch (e) {
+        console.warn('No se pudo finalizar la reserva', reserva.ID_Reserva, e)
+      }
+    }
+
     const resp = await actualizarEstadoHabitacion(room.ID_Habitacion, 'mantenimiento')
     room.estado = (resp && resp.estado) || 'mantenimiento'
 
-    // 4. Refrescar listado de habitaciones
     await loadRooms()
 
-    alert('✅ Check-Out registrado exitosamente. Boleta generada automáticamente.')
+    alert('✅ Check-Out registrado exitosamente. Boleta generada automáticamente para la(s) reserva(s) correspondiente(s).')
   } catch (err) {
     console.error('Error registrando check-out:', err)
     alert('❌ No se pudo registrar el check-out: ' + err.message)
