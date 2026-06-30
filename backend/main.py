@@ -19,14 +19,21 @@ app = FastAPI(
 )
 
 # 4. Configuramos CORS para que tu frontend (Vue) pueda conectarse sin problemas
-allowed_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "https://gestion-hotel-168m.onrender.com,http://localhost:5173,http://127.0.0.1:5173").split(",") if origin.strip()]
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "https://gestion-hotel-168m.onrender.com,https://gestion-hotel-backend-ilge.onrender.com,http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",") if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_origin_regex=r"https://.*\.onrender\.com",
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # 5. Registramos las rutas
