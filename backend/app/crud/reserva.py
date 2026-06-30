@@ -113,7 +113,7 @@ def cambiar_estado_reserva(
 
     reserva.estado = _map_estado_api_to_db(nuevo_estado)
 
-    if nuevo_estado in (EstadoReserva.cancelada, EstadoReserva.terminada):
+    if nuevo_estado in (EstadoReserva.cancelada, EstadoReserva.terminada, EstadoReserva.finalizada):
         if reserva.habitacion:
             reserva.habitacion.estado = "disponible"
 
@@ -130,9 +130,9 @@ def cambiar_estado_reserva(
             # No queremos que falle la transición principal si la liberación de parking falla
             pass
 
-    # Generar boleta automáticamente si la reserva se marca como terminada (check-out)
+    # Generar boleta automáticamente si la reserva se marca como terminada/finalizada (check-out)
     try:
-        if nuevo_estado == EstadoReserva.terminada:
+        if nuevo_estado in (EstadoReserva.terminada, EstadoReserva.finalizada):
             # generar_boleta_final es idempotente: si ya existe devuelve la existente
             boleta = generar_boleta_final(db, id_reserva)
             # Registrar en historial de auditoría
