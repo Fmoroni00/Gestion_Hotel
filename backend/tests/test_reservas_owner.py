@@ -1,8 +1,13 @@
 from datetime import date
 
-from app.crud.reserva import crear_nueva_reserva
+from app.crud.reserva import crear_nueva_reserva, cambiar_estado_reserva
 from app.models import Usuario, Recepcionista, Huesped, Habitacion, Reserva
-from app.schemas.reserva import ReservaCreate
+from app.schemas.reserva import ReservaCreate, EstadoReserva
+
+
+def test_estado_reserva_acepta_finalizada_y_activa():
+    assert EstadoReserva("finalizada") == EstadoReserva.finalizada
+    assert EstadoReserva("activa") == EstadoReserva.activa
 
 
 def test_crear_nueva_reserva_asigna_recepcionista_autenticado(monkeypatch):

@@ -12,15 +12,21 @@ from app.crud.historial import registrar_historial
 from app.schemas.historial import HistorialCreate
 
 
-def _map_estado_api_to_db(estado: EstadoReserva) -> str:
-    if estado == EstadoReserva.terminada:
+def _map_estado_api_to_db(estado: EstadoReserva | str) -> str:
+    if isinstance(estado, str):
+        estado_normalizado = estado.strip().lower()
+        if estado_normalizado in {"terminada", "finalizada"}:
+            return "finalizada"
+        return estado_normalizado
+
+    if estado in (EstadoReserva.terminada, EstadoReserva.finalizada):
         return "finalizada"
     return estado.value
 
 
 def _map_estado_db_to_api(estado: str) -> str:
     if estado == "finalizada":
-        return "terminada"
+        return "finalizada"
     return estado
 
 

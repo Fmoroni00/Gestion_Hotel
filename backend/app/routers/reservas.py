@@ -23,7 +23,7 @@ router = APIRouter(prefix="/reservas", tags=["Reservas"])
 
 def _map_db_estado_a_api(estado: str) -> str:
     if estado == "finalizada":
-        return "terminada"
+        return "finalizada"
     return estado
 
 

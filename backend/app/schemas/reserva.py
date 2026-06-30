@@ -9,8 +9,10 @@ class EstadoReserva(str, Enum):
     """Estados posibles de una reserva."""
     pendiente = "pendiente"
     confirmada = "confirmada"
+    activa = "activa"
     cancelada = "cancelada"
     terminada = "terminada"
+    finalizada = "finalizada"
 
 
 class ReservaBase(BaseModel):

@@ -698,7 +698,7 @@ async function submitCheckIn() {
 async function registerCheckOut(room) {
   if (!room || !room.ID_Habitacion) return
   try {
-    const estadosBuscados = ['activa', 'confirmada', 'pendiente']
+    const estadosBuscados = ['activa', 'confirmada', 'pendiente', 'finalizada']
     let reservasActivas = []
 
     for (const estado of estadosBuscados) {
@@ -717,7 +717,7 @@ async function registerCheckOut(room) {
       try {
         const todasReservas = await getReservas(null)
         reservasActivas = (Array.isArray(todasReservas) ? todasReservas : [])
-          .filter(r => r.ID_Habitacion === room.ID_Habitacion && !['terminada', 'cancelada'].includes(r.estado))
+          .filter(r => r.ID_Habitacion === room.ID_Habitacion && !['terminada', 'finalizada', 'cancelada'].includes(String(r.estado || '').toLowerCase()))
       } catch (e) {
         console.warn('No se pudieron cargar todas las reservas:', e)
       }
@@ -732,7 +732,7 @@ async function registerCheckOut(room) {
 
     for (const reserva of reservasActivas) {
       try {
-        const respReserva = await actualizarEstadoReserva(reserva.ID_Reserva, 'terminada')
+        const respReserva = await actualizarEstadoReserva(reserva.ID_Reserva, 'finalizada')
         console.log('Reserva finalizada automáticamente:', respReserva)
       } catch (e) {
         console.warn('No se pudo finalizar la reserva', reserva.ID_Reserva, e)
